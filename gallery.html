@@ -139,7 +139,7 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
         
-    // 💥 FIXED FOR MOBILE: Automatically scales and compresses photos down below 1MB
+    // this was ai cuz i cant freaking compress photos
     window.uploadPhotos = async function() {
         const input = document.getElementById('photoInput');
         const files = input.files;
@@ -188,7 +188,7 @@
                     ctx.drawImage(img, 0, 0, width, height);
                     
                     // Convert canvas back to text data at 60% quality (Massive file size savings!)
-                    const compressedSrc = canvas.toDataURL('image/jpeg', 0.6);
+                    const compressedSrc = canvas.toDataURL('image/jpeg', 0.4);
 
                     try {
                         // 🚀 Send the lightweight compressed version to the cloud
