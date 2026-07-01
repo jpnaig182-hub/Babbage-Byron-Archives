@@ -121,10 +121,10 @@
             </div>
     </div>
 
-<script type="module">
+ <script type="module">
     // today we'll be using firebase omd (johan is gay)
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     // CONFG obj (no one touch this or else yu're gay)
     const firebaseConfig = {
@@ -150,6 +150,8 @@
             return;
         }
 
+        let uploadCount = 0;
+
         Array.from(files).forEach(file => {
             const reader = new FileReader();
             
@@ -160,15 +162,19 @@
                         src: e.target.result,
                         timestamp: Date.now()
                     });
+                    
+                    uploadCount++;
+                    if (uploadCount === files.length) {
+                        alert('Photos uploaded to the cloud database successfully!');
+                        input.value = ''; 
+                    }
                 } catch (error) {
                     console.error("Error saving to cloud: ", error);
+                    alert('Firebase cloud upload failed. Check file size is under 1MB.');
                 }
             };
             reader.readAsDataURL(file);
         });
-
-        alert('Photos uploaded to the cloud database!');
-        input.value = ''; 
     }
 
     // yo i finally fixed the cloud omndasidfsgs
@@ -202,15 +208,21 @@
             }
         }
     }
-</script>
 
-        // 4. FUNCTION: Wipe out the whole list
-        function clearAllPhotos() {
-            if (confirm('Are you sure you want to delete every photo?')) {
-                localStorage.setItem('photos', JSON.stringify([]));
-                loadPhotos();
+
+    // 4. FUNCTION: Wipe out the whole list
+    window.clearAllPhotos = async function() {
+        if (confirm('Are you sure you want to delete every photo from the cloud database?')) {
+            try {
+                const querySnapshot = await getDocs(collection(db, "photos"));
+                querySnapshot.forEach(async (document) => {
+                    await deleteDoc(doc(db, "photos", document.id));
+                });
+            } catch (error) {
+                console.error("Error clearing database: ", error);
             }
         }
+    }
     </script>
 </body>
 </html>
