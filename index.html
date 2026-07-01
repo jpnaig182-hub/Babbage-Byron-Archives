@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Babbage Archives - Home</title>
+    <style>
+        /* --- Simple Base Styles --- */
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f7f6;
+            color: #333;
+            text-align: center;
+        }
+
+        /* --- Simple Navigation Bar --- */
+        header {
+            background-color: #2c3e50;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        header .logo {
+            color: white;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        header nav a {
+            color: white;
+            text-decoration: none;
+            margin-left: 20px;
+        }
+
+        /* --- Simple Hero Box --- */
+        .hero {
+            background-color: #3498db;
+            background-size: cover;
+            background-position: center;
+            color: white;
+            padding: 100px 20px;
+            position: relative;
+        }
+
+        /* Dark tint layer so text is always readable over the photo */
+        .hero-overlay {
+            background-color: rgba(44, 62, 80, 0.7);
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 2;
+        }
+
+        .hero h1 { font-size: 3rem; margin-bottom: 10px; }
+        .hero p { font-size: 1.2rem; margin-bottom: 30px; }
+
+        /* --- Standard Button --- */
+        .btn {
+            background-color: #1abc9c;
+            color: white;
+            padding: 12px 30px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            display: inline-block;
+        }
+
+        /* --- Info Grid Cards --- */
+        .info-section {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            max-width: 1000px;
+            margin: 50px auto;
+            padding: 0 20px;
+            flex-wrap: wrap;
+        }
+
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            width: 280px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .card h3 { color: #2c3e50; margin-bottom: 10px; }
+
+        footer {
+            background-color: #2c3e50;
+            color: #bdc3c7;
+            padding: 20px;
+            margin-top: 50px;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">Archives of Babbage</div>
+        <nav>
+            <a href="gallery.html">Gallery Page</a>
+        </nav>
+    </header>
+
+    <section class="hero" id="heroBanner">
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
+            <h1>Babbage Archives</h1>
+            <p>Our classroom memories before graduation</p>
+            <a href="gallery.html" class="btn">Open Photo Gallery</a>
+        </div>
+    </section>
+
+    <main class="info-section">
+        <div class="card">
+            <h3>📸 Class Photos</h3>
+            <p>A simple place to drop and view our favorite high school memories together.</p>
+        </div>
+        <div class="card">
+            <h3>🎓 Section 9-B</h3>
+            <p>Built exclusively for our classroom project to showcase what we can build.</p>
+        </div>
+        <div class="card">
+            <h3>💻 Pure HTML & CSS</h3>
+            <p>No messy frameworks. Just simple code that works right in your browser.</p>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 Archives of Babbage. Grade 9 Computer Project.</p>
+    </footer>
+
+    <script>
+        // When the page loads, check if there are any uploaded photos
+        window.addEventListener('DOMContentLoaded', () => {
+            const photos = JSON.parse(localStorage.getItem('photos')) || [];
+            
+            // If there is at least one photo, set it as the background image of the hero banner
+            if (photos.length > 0) {
+                const banner = document.getElementById('heroBanner');
+                banner.style.backgroundImage = `url(${photos[0].src})`;
+            }
+        });
+    </script>
+</body>
+</html>
