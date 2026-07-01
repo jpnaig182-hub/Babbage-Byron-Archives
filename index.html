@@ -15,13 +15,15 @@
             text-align: center;
         }
 
-        /* --- Simple Navigation Bar --- */
+        /* --- Navigation Bar --- */
         header {
             background-color: #2c3e50;
             padding: 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            position: relative;
+            z-index: 10; /* Keeps nav menu above the background slides */
         }
 
         header .logo {
@@ -36,42 +38,65 @@
             margin-left: 20px;
         }
 
-        /* --- 💥 FIXED: Taller Hero Box for a bigger presentation --- */
-        .hero {
+        /* --- 🎨 THE VISUAL BOX SETUP --- */
+        .hero-container {
+            position: relative;
+            height: 500px; /* Locked size to let the slides breathe */
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* These are the two hidden visual layers that will cross-fade */
+        .slide-layer {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
             background-color: #3498db;
             background-size: cover;
             background-position: center;
-            color: white;
-            padding: 180px 20px; /* Increased from 100px to 180px for extra size */
-            position: relative;
-            transition: background-image 1s ease-in-out; /* Smooth fading transition */
+            opacity: 0;
+            transition: opacity 1.5s ease-in-out; /* Super smooth transition speed */
         }
 
-        /* Dark tint layer so text is always readable over the photo */
+        .slide-layer.active {
+            opacity: 1; /* Brings the current layer to view smoothly */
+        }
+
+        /* 🕶️ THE VIGNETTE & OVERLAY LAYER */
+        /* This applies a dark tint AND a camera-lens vignette shadow around the edges */
         .hero-overlay {
-            background-color: rgba(44, 62, 80, 0.7);
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle, rgba(44, 62, 80, 0.4) 20%, rgba(20, 30, 40, 0.85) 95%);
+            z-index: 2;
+            pointer-events: none; /* Allows buttons behind it to still be clickable */
         }
 
+        /* Content layer forced to stay on top of the graphics */
         .hero-content {
             position: relative;
-            z-index: 2;
+            z-index: 3;
+            color: white;
+            padding: 0 20px;
         }
 
-        .hero h1 { font-size: 3rem; margin-bottom: 10px; }
-        .hero p { font-size: 1.2rem; margin-bottom: 30px; }
+        .hero h1 { font-size: 3.5rem; margin-bottom: 10px; text-shadow: 0 2px 10px rgba(0,0,0,0.3); }
+        .hero p { font-size: 1.3rem; margin-bottom: 35px; text-shadow: 0 2px 8px rgba(0,0,0,0.3); }
 
         /* --- Standard Button --- */
         .btn {
             background-color: #1abc9c;
             color: white;
-            padding: 12px 30px;
+            padding: 14px 35px;
             text-decoration: none;
             border-radius: 5px;
             font-weight: bold;
             display: inline-block;
+            box-shadow: 0 4px 15px rgba(26, 188, 156, 0.4);
+            transition: transform 0.2s;
         }
+        .btn:hover { transform: scale(1.03); }
 
         /* --- Info Grid Cards --- */
         .info-section {
@@ -79,26 +104,26 @@
             justify-content: center;
             gap: 20px;
             max-width: 1000px;
-            margin: 50px auto;
+            margin: 60px auto;
             padding: 0 20px;
             flex-wrap: wrap;
         }
 
         .card {
             background: white;
-            padding: 25px;
-            border-radius: 8px;
-            width: 280px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            padding: 30px;
+            border-radius: 12px;
+            width: 270px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
         }
 
-        .card h3 { color: #2c3e50; margin-bottom: 10px; }
+        .card h3 { color: #2c3e50; margin-bottom: 12px; }
 
         footer {
             background-color: #2c3e50;
             color: #bdc3c7;
-            padding: 20px;
-            margin-top: 50px;
+            padding: 25px;
+            margin-top: 60px;
         }
     </style>
 </head>
@@ -111,8 +136,12 @@
         </nav>
     </header>
 
-    <section class="hero" id="heroBanner">
+    <section class="hero-container">
+        <div class="slide-layer active" id="layer1"></div>
+        <div class="slide-layer" id="layer2"></div>
+        
         <div class="hero-overlay"></div>
+
         <div class="hero-content">
             <h1>Babbage Archives</h1>
             <p>Our classroom memories before graduation</p>
@@ -157,28 +186,48 @@
 
         let photoArray = [];
         let currentIndex = 0;
-        const banner = document.getElementById('heroBanner');
+        
+        const layer1 = document.getElementById('layer1');
+        const layer2 = document.getElementById('layer2');
+        let useLayer1 = true; // State flag to track which layer is active
 
-        // Listen for live updates from Firebase
+        // Pull active photos from Firestore cloud collection
         onSnapshot(collection(db, "photos"), (snapshot) => {
             photoArray = [];
             snapshot.forEach((doc) => {
                 photoArray.push(doc.data().src);
             });
 
-            // If we have photos, display the first one immediately
+            // Set up initial view if elements exist
             if (photoArray.length > 0) {
-                banner.style.backgroundImage = `url(${photoArray[currentIndex]})`;
+                layer1.style.backgroundImage = `url(${photoArray[0]})`;
+                layer1.classList.add('active');
             }
         });
 
-        // Loop to change background image every 4 seconds
+        // 🔄 THE ENGINE: Perfect cross-fade loop handler
         setInterval(() => {
             if (photoArray.length > 1) {
+                // Move mathematical tracking pointer forward
                 currentIndex = (currentIndex + 1) % photoArray.length;
-                banner.style.backgroundImage = `url(${photoArray[currentIndex]})`;
+                const nextImageImgUrl = `url(${photoArray[currentIndex]})`;
+
+                if (useLayer1) {
+                    // Layer 1 is visible, load next photo into Layer 2 and switch opacity
+                    layer2.style.backgroundImage = nextImageImgUrl;
+                    layer2.classList.add('active');
+                    layer1.classList.remove('active');
+                } else {
+                    // Layer 2 is visible, load next photo into Layer 1 and switch opacity
+                    layer1.style.backgroundImage = nextImageImgUrl;
+                    layer1.classList.add('active');
+                    layer2.classList.remove('active');
+                }
+                
+                // Flip our tracking flag state
+                useLayer1 = !useLayer1;
             }
-        }, 4000);
+        }, 5000); // 5 seconds interval for a smooth cinematic experience
     </script>
 </body>
 </html>
