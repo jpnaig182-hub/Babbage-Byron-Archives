@@ -121,73 +121,88 @@
             </div>
     </div>
 
-    <script>
-        // Load existing pictures automatically when page opens
-        window.addEventListener('DOMContentLoaded', loadPhotos);
+ <script type="module">
+    // today we'll be using firebase omd (johan is gay)
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // 1. FUNCTION: Process uploaded pictures and save them to localStorage
-        function uploadPhotos() {
-            const input = document.getElementById('photoInput');
-            const files = input.files;
+    // CONFG obj (no one touch this or else yu're gay)
+    const firebaseConfig = {
+        apiKey: "AIzaSyAhQzsmRi5W6wSqAYUahJo2wvxLitiTZaw",
+        authDomain: "byron-archives.firebaseapp.com",
+        projectId: "byron-archives",
+        storageBucket: "byron-archives.firebasestorage.app",
+        messagingSenderId: "260401854443",
+        appId: "1:260401854443:web:87200289a87b1ff923cbae"
+    };
 
-            if (files.length === 0) {
-                alert('Please select an image file first!');
-                return;
-            }
+    // 
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+        
+    // weird shi had to use gemini for this srry its cnfusing -mateo
+    window.uploadPhotos = async function() {
+        const input = document.getElementById('photoInput');
+        const files = input.files;
 
-            let photos = JSON.parse(localStorage.getItem('photos')) || [];
-            let processedCounter = 0;
-
-            // Loop through each file chosen
-            Array.from(files).forEach(file => {
-                const reader = new FileReader();
-                
-                reader.onload = function(e) {
-                    // Save image data to array
-                    photos.push({
-                        id: Date.now() + Math.random(),
-                        src: e.target.result
-                    });
-                    processedCounter++;
-
-                    // Once all files are fully loaded, save to storage
-                    if (processedCounter === files.length) {
-                        localStorage.setItem('photos', JSON.stringify(photos));
-                        alert('Photos successfully saved!');
-                        loadPhotos(); // Refresh grid display
-                        input.value = ''; // Reset input
-                    }
-                };
-                reader.readAsDataURL(file);
-            });
+        if (files.length === 0) {
+            alert('Please select an image file first!');
+            return;
         }
 
-        // 2. FUNCTION: Fetch items from LocalStorage and render HTML code on page
-        function loadPhotos() {
-            const photos = JSON.parse(localStorage.getItem('photos')) || [];
-            const grid = document.getElementById('galleryGrid');
+        Array.from(files).forEach(file => {
+            const reader = new FileReader();
+            
+            reader.onload = async function(e) {
+                try {
+                    // 🚀 This sends the photo data straight to the cloud!
+                    await addDoc(collection(db, "photos"), {
+                        src: e.target.result,
+                        timestamp: Date.now()
+                    });
+                } catch (error) {
+                    console.error("Error saving to cloud: ", error);
+                }
+            };
+            reader.readAsDataURL(file);
+        });
 
-            if (photos.length === 0) {
-                grid.innerHTML = '<p style="grid-column: 1/-1; color: #7f8c8d;">No pictures added yet. Upload some above!</p>';
-                return;
-            }
+        alert('Photos uploaded to the cloud database!');
+        input.value = ''; 
+    }
 
-            // Map each picture item into a card element block
-            grid.innerHTML = photos.map(photo => `
+    // yo i finally fixed the cloud omndasidfsgs
+    onSnapshot(collection(db, "photos"), (snapshot) => {
+        const grid = document.getElementById('galleryGrid');
+        
+        if (snapshot.empty) {
+            grid.innerHTML = '<p style="grid-column: 1/-1; color: #7f8c8d;">No pictures added yet. Upload some above!</p>';
+            return;
+        }
+
+        // Map each cloud document into our HTML card layout
+        grid.innerHTML = snapshot.docs.map(doc => {
+            const photo = doc.data();
+            return `
                 <div class="photo-card">
                     <img src="${photo.src}" alt="Class Memory">
-                    <button class="delete-btn" onclick="deletePhoto(${photo.id})">✕</button>
+                    <button class="delete-btn" onclick="deletePhoto('${doc.id}')">✕</button>
                 </div>
-            `).join('');
-        }
+            `;
+        }).join('');
+    });
 
-        // 3. FUNCTION: Remove a single item from the screen
-        function deletePhoto(id) {
-            let photos = JSON.parse(localStorage.getItem('photos')) || [];
-            photos = photos.filter(p => p.id !== id);
-            localStorage.setItem('photos', JSON.stringify(photos));
-            loadPhotos();
+    // 3. FUNCTION: Delete a single item from the cloud database using its ID
+    window.deletePhoto = async function(id) {
+        if (confirm('Delete this photo for everyone?')) {
+            try {
+                await deleteDoc(doc(db, "photos", id));
+            } catch (error) {
+                console.error("Error deleting document: ", error);
+            }
         }
+    }
+</script>
 
         // 4. FUNCTION: Wipe out the whole list
         function clearAllPhotos() {
