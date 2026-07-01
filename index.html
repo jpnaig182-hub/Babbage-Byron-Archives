@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Babbage Archives - Home</title>
+    <title>Baron Archives - Home</title>
     <style>
         /* --- Simple Base Styles --- */
         body {
@@ -36,14 +36,15 @@
             margin-left: 20px;
         }
 
-        /* --- Simple Hero Box --- */
+        
         .hero {
             background-color: #3498db;
             background-size: cover;
             background-position: center;
             color: white;
-            padding: 100px 20px;
+            padding: 180px 20px; 
             position: relative;
+            transition: background-image 1s ease-in-out; 
         }
 
         /* Dark tint layer so text is always readable over the photo */
@@ -138,17 +139,46 @@
         <p>&copy; 2026 Archives of Babbage. Grade 9 Computer Project.</p>
     </footer>
 
-    <script>
-        // When the page loads, check if there are any uploaded photos
-        window.addEventListener('DOMContentLoaded', () => {
-            const photos = JSON.parse(localStorage.getItem('photos')) || [];
-            
-            // If there is at least one photo, set it as the background image of the hero banner
-            if (photos.length > 0) {
-                const banner = document.getElementById('heroBanner');
-                banner.style.backgroundImage = `url(${photos[0].src})`;
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAhQzsmRi5W6wSqAYUahJo2wvxLitiTZaw",
+            authDomain: "byron-archives.firebaseapp.com",
+            projectId: "byron-archives",
+            storageBucket: "byron-archives.firebasestorage.app",
+            messagingSenderId: "260401854443",
+            appId: "1:260401854443:web:87200289a87b1ff923cbae"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        let photoArray = [];
+        let currentIndex = 0;
+        const banner = document.getElementById('heroBanner');
+
+        // Listen for live updates from Firebase
+        onSnapshot(collection(db, "photos"), (snapshot) => {
+            photoArray = [];
+            snapshot.forEach((doc) => {
+                photoArray.push(doc.data().src);
+            });
+
+            // If we have photos, display the first one immediately
+            if (photoArray.length > 0) {
+                banner.style.backgroundImage = `url(${photoArray[currentIndex]})`;
             }
         });
+
+        // Loop to change background image every 4 seconds
+        setInterval(() => {
+            if (photoArray.length > 1) {
+                currentIndex = (currentIndex + 1) % photoArray.length;
+                banner.style.backgroundImage = `url(${photoArray[currentIndex]})`;
+            }
+        }, 4000);
     </script>
 </body>
 </html>
