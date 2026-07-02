@@ -35,7 +35,7 @@
 
         /* --- Upload Box Section --- */
         .upload-box {
-            background: white;
+            background: rgba(68, 114, 255, 0.7);
             padding: 30px;
             border-radius: 8px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
@@ -48,7 +48,7 @@
         }
 
         button {
-            background-color: #3498db;
+            background-color: #1abc9c;
             color: white;
             border: none;
             padding: 10px 20px;
@@ -56,8 +56,17 @@
             cursor: pointer;
             font-weight: bold;
         }
+/* {
+            background-color: #16a085; 
+            transform: translateY(-2px); 
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15); 
+        }*/
+        button:hover {
+             background-color: #07ffcd;
+             transform: translateY(-2px);
+             box-shadow: 0 4px 10px rgba(255, 255, 255, 0.15); 
+        }
 
-        button:hover { background-color: #2980b9; }
         .clear-btn { background-color: #e74c3c; margin-left: 10px; }
         .clear-btn:hover { background-color: #c0392b; }
 
@@ -74,6 +83,12 @@
             border-radius: 8px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             position: relative;
+            overflow: hidden;
+        }
+
+        .photo-card.active {
+            overflow: visible;
+            z-index: 99;
         }
 
         .photo-card img {
@@ -81,6 +96,57 @@
             height: 180px;
             object-fit: cover;
             border-radius: 4px;
+            opacity: 0.85; 
+            filter: brightness(0.9);
+
+            transition: transform 0.3s ease, opacity 0.3s ease, filter 0.3s ease;
+        }
+        .photo-card:hover img {
+            
+            transform: scale(1.08); 
+            opacity: 1;
+            filter: brightness(1);
+            cursor: pointer;
+        }
+
+        .photo-detail-bubble {
+            display: none; 
+            position: absolute;
+            top: 105%; 
+            left: 5%;
+            width: 90%; 
+            background: #2c3e50; 
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+            z-index: 10; 
+            box-sizing: border-box;
+        }
+
+        .photo-detail-bubble::before {
+            content: '';
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 8px;
+            border-style: solid;
+            border-color: transparent transparent #2c3e50 transparent;
+        }
+
+        .photo-detail-bubble img {
+            width: 100% !important;
+            height: auto !important; 
+            max-height: 250px; 
+            object-fit: contain !important; 
+            border-radius: 4px;
+            opacity: 1 !important;
+            filter: brightness(1) !important;
+            transform: none !important;
+        }
+
+        .photo-card.active .photo-detail-bubble {
+            display: block;
         }
 
         .delete-btn {
@@ -94,8 +160,15 @@
             width: 30px;
             height: 30px;
             cursor: pointer;
+            z-index: 5;
         }
-    </style>
+
+         .delete-btn:hover {
+             background-color: #ff1900;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(255, 255, 255, 0.15);
+        }
+  </style>
 </head>
 <body>
 
@@ -106,8 +179,10 @@
         </nav>
     </header>
 
+    
+    
     <div class="container">
-        <h1>📸 Photo Gallery Collection</h1>
+        <h1> Gallery Collection</h1>
 
         <div class="upload-box">
             <h3>Add New Classroom Photos</h3>
@@ -136,10 +211,11 @@
         appId: "1:260401854443:web:87200289a87b1ff923cbae"
     };
 
+    // 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
         
-    // this was ai cuz i cant freaking compress photos
+    // weird shi had to use gemini for this srry its cnfusing -mateo
     window.uploadPhotos = async function() {
         const input = document.getElementById('photoInput');
         const files = input.files;
@@ -154,65 +230,29 @@
         Array.from(files).forEach(file => {
             const reader = new FileReader();
             
-            reader.onload = function(e) {
-                const img = new Image();
-                img.src = e.target.result;
-                
-                img.onload = async function() {
-                    // Create an invisible canvas element to redraw the image smaller
-                    const canvas = document.createElement('canvas');
-                    const ctx = canvas.getContext('2d');
+            reader.onload = async function(e) {
+                try {
+                    // 🚀 This sends the photo data straight to the cloud!
+                    await addDoc(collection(db, "photos"), {
+                        src: e.target.result,
+                        timestamp: Date.now()
+                    });
                     
-                    // Set maximum resolution limits for mobile photos
-                    const MAX_WIDTH = 1000;
-                    const MAX_HEIGHT = 1000;
-                    let width = img.width;
-                    let height = img.height;
-
-                    if (width > height) {
-                        if (width > MAX_WIDTH) {
-                            height *= MAX_WIDTH / width;
-                            width = MAX_WIDTH;
-                        }
-                    } else {
-                        if (height > MAX_HEIGHT) {
-                            width *= MAX_HEIGHT / height;
-                            height = MAX_HEIGHT;
-                        }
+                    uploadCount++;
+                    if (uploadCount === files.length) {
+                        alert('Photos uploaded to the cloud database successfully!');
+                        input.value = ''; 
                     }
-
-                    canvas.width = width;
-                    canvas.height = height;
-                    
-                    // Draw image inside canvas
-                    ctx.drawImage(img, 0, 0, width, height);
-                    
-                    // Convert canvas back to text data at 60% quality (Massive file size savings!)
-                    const compressedSrc = canvas.toDataURL('image/jpeg', 0.4);
-
-                    try {
-                        // 🚀 Send the lightweight compressed version to the cloud
-                        await addDoc(collection(db, "photos"), {
-                            src: compressedSrc,
-                            timestamp: Date.now()
-                        });
-                        
-                        uploadCount++;
-                        if (uploadCount === files.length) {
-                            alert('Photos successfully compressed and uploaded!');
-                            input.value = ''; 
-                        }
-                    } catch (error) {
-                        console.error("Error saving to cloud: ", error);
-                        alert('Upload failed.');
-                    }
-                };
+                } catch (error) {
+                    console.error("Error saving to cloud: ", error);
+                    alert('Firebase cloud upload failed. Check file size is under 1MB.');
+                }
             };
             reader.readAsDataURL(file);
         });
     }
 
-    // listen for cloud data changes
+    // yo i finally fixed the cloud omndasidfsgs
     onSnapshot(collection(db, "photos"), (snapshot) => {
         const grid = document.getElementById('galleryGrid');
         
@@ -221,18 +261,22 @@
             return;
         }
 
+        // Map each cloud document into our HTML card layout
         grid.innerHTML = snapshot.docs.map(doc => {
             const photo = doc.data();
             return `
                 <div class="photo-card">
                     <img src="${photo.src}" alt="Class Memory">
                     <button class="delete-btn" onclick="deletePhoto('${doc.id}')">✕</button>
+                    <div class="photo-detail-bubble">
+                        <img src="${photo.src}" alt="Full view">
+                    </div>
                 </div>
             `;
         }).join('');
     });
 
-    // 3. FUNCTION: Delete a single item
+    // 3. FUNCTION: Delete a single item from the cloud database using its ID
     window.deletePhoto = async function(id) {
         if (confirm('Delete this photo for everyone?')) {
             try {
@@ -242,6 +286,7 @@
             }
         }
     }
+
 
     // 4. FUNCTION: Wipe out the whole list
     window.clearAllPhotos = async function() {
@@ -256,6 +301,20 @@
             }
         }
     }
+
+    document.getElementById('galleryGrid').addEventListener('click', (e) => {
+        if (e.target.closest('.delete-btn') || e.target.closest('.photo-detail-bubble')) return;
+        
+        const card = e.target.closest('.photo-card');
+        if (!card) return;
+
+        const allCards = document.querySelectorAll('.photo-card');
+        allCards.forEach(c => {
+            if (c !== card) c.classList.remove('active');
+        });
+
+        card.classList.toggle('active');
+    });
     </script>
 </body>
 </html>
